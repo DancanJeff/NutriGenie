@@ -1,6 +1,7 @@
 import math
 from typing import List, Dict, Tuple
 from enum import Enum
+from food_database import FoodDatabase, FoodCategory, FoodNutrient
 
 class ActivityLevel(Enum):
     SEDENTARY = 1.2
@@ -253,3 +254,45 @@ def get_hydration_recommendations(age: int, activity: str, weight: float) -> Dic
         "daily_water_cups": round(base_water / 240),  # 240ml per cup
         "recommendation": f"Aim for {round(base_water/240)} cups ({round(base_water/1000, 1)}L) of water daily"
     }
+
+class EnhancedNutritionEngine:
+    def __init__(self):
+        self.food_db = FoodDatabase()
+    
+    def get_specific_food_recommendations(self, bmi, activity, health_conditions, genetic_traits):
+        """Get specific food recommendations instead of generic categories"""
+        recommendations = {}
+        
+        # High-protein foods for muscle building
+        if activity == "Active":
+            protein_foods = self.food_db.get_food_by_category(FoodCategory.MEAT)
+            # Sort by protein content
+            protein_rich = []
+            for food in protein_foods[:10]:  # Top 10
+                nutrition = self.food_db.get_food_nutrition(food)
+                if nutrition and nutrition.protein > 20:  # High protein
+                    protein_rich.append({
+                        'food': food,
+                        'protein': nutrition.protein,
+                        'calories': nutrition.calories
+                    })
+            recommendations['high_protein'] = sorted(protein_rich, 
+                                                   key=lambda x: x['protein'], 
+                                                   reverse=True)[:5]
+        
+        # Low-sodium foods for hypertension
+        if "Hypertension" in health_conditions:
+            all_foods = self.food_db.food_data['food'].tolist()
+            low_sodium = []
+            for food in all_foods[:50]:  # Sample foods
+                nutrition = self.food_db.get_food_nutrition(food)
+                if nutrition and nutrition.sodium < 100:  # Low sodium
+                    low_sodium.append({
+                        'food': food,
+                        'sodium': nutrition.sodium,
+                        'potassium': nutrition.potassium
+                    })
+            recommendations['low_sodium'] = sorted(low_sodium, 
+                                                 key=lambda x: x['sodium'])[:10]
+        
+        return recommendations
